@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script> <!-- https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="./FAIR_validator.css" />
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0CLEDCPMDD"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-0CLEDCPMDD');
+    </script>
+
+
+    <title>FOOPS!</title>
+
+    <nav class="navbar navbar-expand-lg bg-light">
+      <div class="d-flex flex-grow-1">
+          <span class="w-100 d-lg-none d-block"><!-- hidden spacer to center brand on mobile --></span>
+          <a class="texto1 navbar-brand d-none d-lg-inline-block" href="FAIR_validator.html">
+              <img src="assets/foopsLogo.png" alt="Logo FOOPS!" class="img-responsive" width="15%"/> Ontology Pitfall Scanner for FAIR (Beta)
+          </a>
+          <!--<a class="navbar-brand-two mx-auto d-lg-none d-inline-block" href="#">
+              <img src="//placehold.it/40?text=LOGO" alt="logo">
+          </a>-->
+          <div class="w-100 text-right">
+              <button class="navbar-toggler texto-menu" type="button" data-toggle="collapse" data-target="#myNavbar">
+                  <span class="navbar-toggler-icon"></span> Menu
+              </button>
+          </div>
+      </div>
+      <div class="collapse navbar-collapse flex-grow-1 text-right" id="myNavbar">
+          <ul class="navbar-nav ml-auto flex-nowrap">
+              <li class="nav-item">
+                  <a href="FAIR_validator.html" class="nav-link m-2 menu-item nav-active">Validator</a>
+              </li>
+              <li class="nav-item">
+                  <a href="#" class="nav-link m-2 menu-item">About</a>
+              </li>
+
+          </ul>
+      </div>
+    </nav>
+
+</head>
+
+
+<body>
+    <div class="container">
+        <br/>
+        <p>
+            The <a href="https://www.nature.com/articles/sdata201618">Findable, Accessible, Interoperable and Reusable principles</a> provide a set of guidelines and best practices for describing and accessing research data to be reused by others. We believe that ontologies, on their own, should also adapt these principles to be reused by others. With this validator we aim to provide the means for researchers to assess whether a vocabulary (OWL or SKOS) conforms or not to the best practices for publishing ontologies on the Web. Our validator is based on the metrics proposed by the following publications:
+            <ul>
+              <li><a href="http://dgarijo.com/papers/EKAW2020_Coming_to_Terms_with_FAIR_Ontologies.pdf">Coming to terms with FAIR ontologies: A position paper.</a> María Poveda-Villalón, Paola Espinoza-Arias, Daniel Garijo and Oscar Corcho. Proceedings of the 22nd International Conference on Knowledge Engineering and Knowledge Management (EKAW 2020)</li>
+              <li><a href="http://dgarijo.com/papers/best_practices2020.pdf">Best Practices for Implementing FAIR Vocabularies and Ontologies on the Web.</a>Daniel  Garijo and María Poveda-Villalón. In Applications and Practices in Ontology Design, Extraction, and Reasoning. IOS Press, Netherlands, 2020</li>
+              <li><a href="https://zenodo.org/record/4314321">D2.5 FAIR Semantics Recommendations Second Iteration (Version 1.0).</a> Wim Hugo, Yann Le Franc, Gerard Coen, Jessica Parland-von Essen and Luiz Bonino, Luiz. (2020). Zenodo.</li>
+            </ul>
+        </p>
+        <p>
+          Our <a href="assets/iswc_2021_demo.pdf">ISWC 2021 demo paper</a> (best demo award) provides an overview of the FOOPS! service. Please cite our work as follows:
+          <pre>
+            @article{foops2021,
+            	title        = {FOOPS!: An Ontology Pitfall Scanner for the FAIR Principles},
+            	author       = {Garijo, Daniel and Corcho, Oscar and Poveda-Villal{\'o}n, Mar{\i}a},
+            	year         = 2021,
+            	booktitle    = {International Semantic Web Conference (ISWC) 2021: Posters, Demos, and Industry Tracks},
+            	publisher    = {CEUR-WS.org},
+            	series       = {{CEUR} Workshop Proceedings},
+            	volume       = 2980,
+            	url          = {http://ceur-ws.org/Vol-2980/paper321.pdf}
+            }
+          </pre>
+        </p>
+        <p>If you are interested in more information, check <a href="https://www.slideshare.net/dgarijo/foops-an-ontology-pitfall-scanner-for-the-fair-principles">our slides</a> with the rationale of FOOPS! and the <a href="https://www.youtube.com/watch?v=s8FaFl8i6yQ&ab_channel=OEG-UPM">teaser video</a> we made for ISWC 2021</p>
+        <p>
+          This work was led by several researchers of the <a href="https://oeg-upm.net/">Ontology Engineering Group</a> at Universidad Politécnica de Madrid:
+          <ul>
+            <li>Daniel Garijo (Distinguished researcher)</li>
+            <li>María Poveda (Assistant professor)</li>
+            <li>Jacobo Mata (Undergraduate student)</li>
+            <li>Oscar Corcho (Full professor)</li>
+          </ul>
+        </p>
+        <p>
+          Do you have suggestions or bugs to report? Please open an issue in our <a href="https://github.com/oeg-upm/fair_ontologies">public GitHub repository</a>
+        </p>
+    </div>
+
+
+    <hr>
+
+    <footer class="footer container">
+            <hr>
+
+        <div class="row">
+            <hr />
+            <div class="col-md-7">
+                Daniel Garijo & María Poveda-Villalón
+                <br>
+                Contact email: foops@delicias.dia.fi.upm.es
+                <br>
+                Built with <a target="_blank" href="http://getbootstrap.com/">Bootstrap</a>
+                <br>
+                Latest revision July, 2021
+                <br>
+                Licensed under the <a target="_blank" href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>
+            </div>
+            <div class="col-md-5" align="right">
+                <a href="https://oeg.fi.upm.es/" target="_blank"><img src="assets/logo.gif" alt="OEG logo" class="img-rounded" class="img-responsive" width="20%"/></a>
+
+                <a href="http://fi.upm.es/" target="_blank"><img src="assets/fiLogo.png" alt="FI logo" class="img-rounded" class="img-responsive" width="20%"/></a>
+
+                <a href="https://www.upm.es/" target="_blank"><img src="assets/upmlogo.png" alt="UPM logo" class="img-rounded" class="img-responsive" width="20%"/></a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
