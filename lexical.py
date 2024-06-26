@@ -4,6 +4,7 @@
 # First asks word to search for related terms
 # Then asks for 1 or 2 either to upload from local file or to upload URL
 
+
 import rdflib
 from rdflib import Graph, RDF, OWL, RDFS
 import requests
@@ -217,16 +218,17 @@ def calculate_metrics(input_term, ontology):
     O = len(ontology)
 
     # Calculate domain coverage and ontology relevance
-    domain_coverage = S / D if D > 0 else 0
-    ontology_relevance = S / O if O > 0 else 0
+    domain_coverage = (S / D) * 100 if D > 0 else 0
+    ontology_relevance = (S / O) * 100 if O > 0 else 0
 
     return {
-        'Domain Coverage (S/D)': domain_coverage,
-        'Ontology Relevance (S/O)': ontology_relevance,
+        
         'Related Terms': related_terms,
         'Number of Related Terms (D)': D,
         'Number of Related Terms in Ontology (S)': S,
-        'Total Number of Concepts in Ontology (O)': O
+        'Total Number of Concepts in Ontology (O)': O,
+        'Domain Coverage (S/D)': domain_coverage,
+        'Ontology Relevance (S/O)': ontology_relevance,
     }
 
 def select_file():
@@ -251,6 +253,9 @@ if __name__ == "__main__":
 
         print(f"Metrics for '{input_term}':")
         for key, value in metrics.items():
-            print(f"{key}: {value}")
+            if isinstance(value, float):
+                print(f"{key}: {value:.2f}%")
+            else:
+                print(f"{key}: {value}")
     else:
         print("No ontology loaded.")

@@ -1,0 +1,6 @@
+ttl file url for testing
+
+1. https://raw.githubusercontent.com/FZ-HANNOU/Omega-X/main/EventsTimeSeriesOntology/EventsTimeSeriesOntology-1.0.ttl
+2. https://saref.etsi.org/saref4ener/v1.2.1/
+3. https://ci.mines-stetienne.fr/seas/PhotovoltaicOntology-1.0.ttl
+4. https://saref.etsi.org/saref4grid/v1.1.1/saref4grid.ttl
