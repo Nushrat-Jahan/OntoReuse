@@ -42,19 +42,16 @@ pip install rdflib requests owlready2
    mvn install
    ```
 
-   This command will compile the project and create a JAR file in the `target` directory.
-
-3. **Locate the JAR File**:
-   After the build is complete, you should find the JAR file, for example `fair_ontologies-0.1.0.jar`, in the `target` directory.
+   This command will compile the project and create a JAR file in the `target` directory for example `fair_ontologies-0.1.0.jar`, in the `target` directory.
 
 4. **Run the Server**:
-   Execute the following command to start the server. Replace `PORT` with the desired port number (e.g., 8083):
+   Executing the following command will start the server. `PORT` can be replaced with the desired port number (e.g., 8083):
    ```sh
    java -jar -Dserver.port=8083 target/fair_ontologies-0.1.0.jar
    ```
 
 5. **Test the Installation**:
-   Once the server is running, you can test it by sending a request using `curl`:
+   Once the server is running, sending a request using `curl`, it can be tested:
    ```sh
    curl -X POST "http://localhost:8083/assessOntology" -H "accept: application/json;charset=UTF-8" -H "Content-Type: application/json;charset=UTF-8" -d "{ \"ontologyUri\": \"https://w3id.org/okn/o/sd\"}"
    ```
