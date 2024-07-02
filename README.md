@@ -1,4 +1,4 @@
-# Ontology ReuseToolkit
+# OntoReuse
 
 ## Overview
 The OntologyReuseToolkit is designed to evaluate and suggest ontologies for reuse. This tool streamlines the selection process for engineers by assessing factors such as structure, lexicon, and maturity of ontologies.
