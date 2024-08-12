@@ -56,6 +56,50 @@ pip install rdflib requests owlready2
    curl -X POST "http://localhost:8083/assessOntology" -H "accept: application/json;charset=UTF-8" -H "Content-Type: application/json;charset=UTF-8" -d "{ \"ontologyUri\": \"https://w3id.org/okn/o/sd\"}"
    ```
 
+   
+# Running app.py
+
+After successfully running `foopsReuse`, you can proceed with running the `app.py` file to start the web application that allows you to analyze ontologies through a user-friendly interface.
+
+## Steps to Run app.py:
+
+### 1. Navigate to the Project Directory
+
+Open a terminal or command prompt and navigate to the directory where `app.py` is located.
+
+### 2. Ensure Python Dependencies are Installed
+
+Before running the Flask application, ensure that the necessary Python libraries are installed by running:
+
+```sh
+pip install rdflib requests owlready2 flask
+```
+
+### 3. Start the Flask Application
+
+Run the Flask application by executing:
+
+```sh
+python app.py
+```
+
+The application will start on `http://127.0.0.1:5000` by default.
+
+### 4. Access the Application
+
+Open a web browser and navigate to `http://127.0.0.1:5000`. You can now upload ontology files or provide ontology URLs to analyze them.
+
+### 5. Test Ontologies
+
+You can test the application with sample ontology URLs provided in `Test.txt`:
+
+```txt
+1. https://raw.githubusercontent.com/FZ-HANNOU/Omega-X/main/EventsTimeSeriesOntology/EventsTimeSeriesOntology-1.0.ttl
+2. https://saref.etsi.org/saref4ener/v1.2.1/
+3. https://ci.mines-stetienne.fr/seas/PhotovoltaicOntology-1.0.ttl
+4. https://saref.etsi.org/saref4grid/v1.1.1/saref4grid.ttl
+```
+
 ### Notes
 
 - **Port Conflict**: Ensure the chosen port (8083 in this example) is not being used by another application.
