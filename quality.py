@@ -1,8 +1,7 @@
-#content negotiation works with URL only
+import sys
 import rdflib
 import requests
 import os
-from tkinter import Tk, filedialog
 import tempfile
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
@@ -11,15 +10,6 @@ def count_elements(graph):
     object_properties_count = len(list(graph.subjects(rdflib.RDF.type, rdflib.OWL.ObjectProperty)))
     classes_count = len(list(graph.subjects(rdflib.RDF.type, rdflib.OWL.Class)))
     return object_properties_count, classes_count
-
-def select_file_dialog(title):
-    root = Tk()
-    root.withdraw()
-    root.lift()
-    root.attributes('-topmost', True)
-    file_path = filedialog.askopenfilename(title=title, filetypes=[("Turtle files", "*.ttl"), ("All files", "*.*")])
-    root.destroy()
-    return file_path
 
 def download_and_parse_ontology(url):
     try:
@@ -84,8 +74,7 @@ def check_content_negotiation(base_url):
         soup = BeautifulSoup(response.text, 'html.parser')
         links = soup.find_all('a', href=True)
 
-        for link in links:
-            href = link['href']
+        for link in links, href in link:
             for fmt in formats:
                 if href.endswith(fmt):
                     found_formats.add(fmt)
@@ -96,25 +85,46 @@ def check_content_negotiation(base_url):
     return found_formats
 
 def main():
-    option = input("Choose an option:\n1. Select an ontology file from your computer\n2. Enter the URL of the ontology\nEnter 1 or 2: ").strip()
+    if len(sys.argv) < 2:
+        print("Usage: python quality.py <ontology_source>")
+        sys.exit(1)
     
-    if option == '1':
-        ontology_file_path = select_file_dialog("Select the Main Ontology File")
+    ontology_source = sys.argv[1]
+
+    if ontology_source.startswith('http://') or ontology_source.startswith('https://'):
+        parsed_url = urlparse(ontology_source)
+        base_url = urljoin(ontology_source, '/'.join(parsed_url.path.split('/')[:-1]) + '/')
         
+        foops_results = evaluate_with_foops(ontology_source)
+        if foops_results:
+            print("\nFOOPS! Evaluation Results:")
+            print(foops_results)
+        else:
+            print("Failed to get results from FOOPS!")
+        
+        found_formats = check_content_negotiation(base_url)
+        content_negotiation_score = len(found_formats)
+        print(f"\nContent Negotiation Score: {content_negotiation_score}/6")
+        print("Found formats:", ", ".join(found_formats))
+    else:
         base_url = None
-        with open(ontology_file_path, 'r') as file:
-            for line in file:
-                if line.startswith('@base'):
-                    base_url = line.split('<')[1].split('>')[0]
-                    break
-                if "imports:" in line:
-                    base_url = line.split(':')[1].strip()
-                    if base_url.startswith('<') and base_url.endswith('>'):
-                        base_url = base_url[1:-1]  # Remove < and >
+        try:
+            with open(ontology_source, 'r') as file:
+                for line in file:
+                    if line.startswith('@base'):
+                        base_url = line.split('<')[1].split('>')[0]
+                        break
+                    if "imports:" in line:
+                        base_url = line.split(':')[1].strip()
+                        if base_url.startswith('<') and base_url.endswith('>'):
+                            base_url = base_url[1:-1]
+        except FileNotFoundError:
+            print("The file path is not correct. Please provide a valid file path.")
+            return
 
         main_graph = rdflib.Graph()
-        main_graph.parse(ontology_file_path, format='turtle')
-        
+        main_graph.parse(ontology_source, format='turtle')
+
         with tempfile.TemporaryDirectory() as temp_dir:
             if base_url:
                 resolve_imports(main_graph, base_url, temp_dir)
@@ -131,28 +141,6 @@ def main():
                     print("Failed to get results from FOOPS!")
             else:
                 print("Base URL not found. Cannot perform FOOPS! evaluation.")
-    
-    elif option == '2':
-        ontology_url = input("Enter the URL of the Turtle file: ").strip()
-        if ontology_url.startswith('http://') or ontology_url.startswith('https://'):
-            parsed_url = urlparse(ontology_url)
-            base_url = urljoin(ontology_url, '/'.join(parsed_url.path.split('/')[:-1]) + '/')
-
-            foops_results = evaluate_with_foops(ontology_url)
-            if foops_results:
-                print("\nFOOPS! Evaluation Results:")
-                print(foops_results)
-            else:
-                print("Failed to get results from FOOPS!")
-            
-            found_formats = check_content_negotiation(base_url)
-            content_negotiation_score = len(found_formats)
-            print(f"\nContent Negotiation Score: {content_negotiation_score}/6")
-            print("Found formats:", ", ".join(found_formats))
-        else:
-            print("Invalid URL. Please enter a valid URL.")
-    else:
-        print("Invalid option. Please enter 1 or 2.")
 
 if __name__ == "__main__":
     main()

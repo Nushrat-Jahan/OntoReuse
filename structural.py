@@ -1,16 +1,11 @@
-# takes 1 or 2 as input either to upload from local repository or to paste ttl file url
-
-
+import sys
 import rdflib
 from rdflib import Graph, RDF, OWL, RDFS
 import requests
-import tkinter as tk
-from tkinter import filedialog, messagebox
 import tempfile
 from owlready2 import get_ontology, sync_reasoner_pellet, OwlReadyInconsistentOntologyError
 import time
 
-# Part 1: Ontology Loading
 def count_elements(graph):
     classes = set(graph.subjects(RDF.type, OWL.Class))
     object_properties = set(graph.subjects(RDF.type, OWL.ObjectProperty))
@@ -23,15 +18,6 @@ def count_elements(graph):
                 classes.add(obj)
 
     return len(object_properties), len(classes)
-
-def select_file_dialog(title):
-    root = tk.Tk()
-    root.withdraw()
-    root.lift()
-    root.attributes('-topmost', True)
-    file_path = filedialog.askopenfilename(title=title, filetypes=[("Turtle files", "*.ttl"), ("All files", "*.*")])
-    root.destroy()
-    return file_path
 
 def download_and_parse_ontology(url):
     try:
@@ -60,35 +46,22 @@ def resolve_imports(graph, base_url, temp_dir):
         else:
             print(f"Failed to download or load ontology from URL: {imported_iri}")
 
-def get_ontology_source():
-    choice = input("Enter '1' to select a local Turtle file or '2' to provide a URL: ").strip()
-    if choice == '1':
-        return select_file_dialog("Select the Main Ontology File")
-    elif choice == '2':
-        url = input("Enter the URL of the Turtle file: ").strip()
-        if url.startswith('http://') or url.startswith('https://'):
-            return url
-        else:
-            print("Invalid URL. Please enter a valid URL.")
-            return get_ontology_source()
-    else:
-        print("Invalid choice. Please enter '1' or '2'.")
-        return get_ontology_source()
-
-def load_ontology():
-    ontology_source = get_ontology_source()
-
-    if ontology_source.startswith('http://') or ontology_source.startswith('https://'):
+def load_ontology(source):
+    if not source:
+        print("No source provided for ontology.")
+        return None, 0
+    print(f"Loading ontology from source: {source}")
+    if source.startswith('http://') or source.startswith('https://'):
         start_time = time.time()
-        main_graph = download_and_parse_ontology(ontology_source)
+        main_graph = download_and_parse_ontology(source)
         load_time = time.time() - start_time
-        base_url = ontology_source.rsplit('/', 1)[0] + '/' if main_graph else None
+        base_url = source.rsplit('/', 1)[0] + '/' if main_graph else None
     else:
         base_url = None
         try:
-            if ontology_source:
+            if source:
                 start_time = time.time()
-                with open(ontology_source, 'r') as file:
+                with open(source, 'r') as file:
                     for line in file:
                         if line.startswith('@base'):
                             base_url = line.split('<')[1].split('>')[0]
@@ -98,7 +71,7 @@ def load_ontology():
                             if base_url.startswith('<') and base_url.endswith('>'):
                                 base_url = base_url[1:-1]
                 main_graph = Graph()
-                main_graph.parse(ontology_source, format='turtle')
+                main_graph.parse(source, format='turtle')
                 load_time = time.time() - start_time
             else:
                 main_graph = None
@@ -118,7 +91,6 @@ def load_ontology():
         print("Failed to load the ontology.")
         return None, 0
 
-# Part 2: Ontology Evaluation
 def get_classes(graph):
     classes = set(graph.subjects(RDF.type, OWL.Class)).union(set(graph.subjects(RDF.type, RDFS.Class)))
     return classes
@@ -136,8 +108,6 @@ def concept_structure(graph):
     components_per_class = {}
     for cls in classes:
         components = set(graph.objects(subject=cls, predicate=RDFS.subClassOf))
-        components.update(graph.objects(subject=cls, predicate=RDFS.domain))
-        components.update(graph.objects(subject=cls, predicate=RDFS.range))
         components_per_class[cls] = components
     return components_per_class
 
@@ -266,10 +236,6 @@ def evaluate_ontology(graph, load_time):
     datatype_properties = get_datatype_properties(graph)
     total_properties = len(object_properties) + len(datatype_properties)
     
-
-    print("\nNumber of subclasses for each class:")
-    for cls, count in subclass_count_result.items():
-        print(f"{cls}: {count}")
     print("\nRelationship Richness: {:.2f}%".format(relationship_richness_result))
     print("Inheritance Richness: {:.2f}%".format(inheritance_richness_result))
     
@@ -294,12 +260,15 @@ def evaluate_ontology(graph, load_time):
     for i, query_time in enumerate(query_times, 1):
         print(f"Time to execute query {i}: {query_time:.4f} seconds")
 
-def main():
-    graph, load_time = load_ontology()
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python structural.py <ontology_source>")
+        sys.exit(1)
+
+    ontology_source = sys.argv[1]
+    graph, load_time = load_ontology(ontology_source)
+
     if graph:
         evaluate_ontology(graph, load_time)
     else:
         print("No ontology loaded.")
-
-if __name__ == "__main__":
-    main()

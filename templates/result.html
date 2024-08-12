@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Analysis Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .result-block {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .result-block h3 {
+            margin-top: 0;
+        }
+        .result-block p {
+            margin: 5px 0;
+        }
+        .result-block hr {
+            margin: 10px 0;
+        }
+        .chart-container {
+            width: 50%;
+            margin: auto;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Analysis Results</h1>
+    <div class="section" id="lexical-analysis">
+        <h2>Lexical Analysis Result</h2>
+        <div class="result-block" id="lexical-result"></div>
+    </div>
+    <div class="section" id="structural-analysis">
+        <h2>Structural Analysis Result</h2>
+        <div class="result-block" id="structural-result"></div>
+    </div>
+    <div class="section" id="quality-analysis">
+        <h2>Quality Analysis Result</h2>
+        <div class="chart-container">
+            <canvas id="quality-overall-chart"></canvas>
+        </div>
+        <div class="result-block" id="quality-result"></div>
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('quality_result.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Lexical Analysis
+                    let lexicalContent = `
+                        <p>Resolved IRI: ${data.ontology_URI}</p>
+                        <p>Total - Object Properties: 135, Classes: 233</p>
+                        <p>Metrics for 'device':</p>
+                        <p>Related Terms: ${JSON.stringify(data.lexical_result.related_terms)}</p>
+                        <p>Number of Related Terms (D): ${data.lexical_result.number_related_terms}</p>
+                        <p>Number of Related Terms in Ontology (S): ${data.lexical_result.number_related_terms_ontology}</p>
+                        <p>Total Number of Concepts in Ontology (O): ${data.lexical_result.total_number_concepts_ontology}</p>
+                        <p>Domain Coverage (S/D): ${data.lexical_result.domain_coverage}</p>
+                        <p>Ontology Relevance (S/O): ${data.lexical_result.ontology_relevance}</p>
+                    `;
+                    document.getElementById('lexical-result').innerHTML = lexicalContent;
+
+                    // Structural Analysis
+                    let structuralContent = `
+                        <p>Resolved IRI: ${data.ontology_URI}</p>
+                        <p>Total - Object Properties: 135, Classes: 233</p>
+                        <p>Relationship Richness: ${data.structural_result.relationship_richness}</p>
+                        <p>Inheritance Richness: ${data.structural_result.inheritance_richness}</p>
+                        <p>Sum of the number of subclasses: ${data.structural_result.sum_subclasses}</p>
+                        <p>Average number of subclasses per class: ${data.structural_result.avg_subclasses_per_class}</p>
+                        <p>Inheritance Depth: ${data.structural_result.inheritance_depth}</p>
+                        <p>Number of object properties: ${data.structural_result.number_object_properties}</p>
+                        <p>Number of datatype properties: ${data.structural_result.number_datatype_properties}</p>
+                        <p>Total number of relationships (properties): ${data.structural_result.total_number_relationships}</p>
+                        <p>Cohesion Metrics:</p>
+                        <p>Number of Roots (NoR): ${data.structural_result.number_roots}</p>
+                        <p>Number of Leaves (NoL): ${data.structural_result.number_leaves}</p>
+                        <p>Average Depth of Inheritance Tree of Leaf Nodes (ADIT-LN): ${data.structural_result.avg_depth_inheritance_tree}</p>
+                        <p>Consistency: ${data.structural_result.consistency}</p>
+                        <p>Computational Efficiency:</p>
+                        <p>Time to load ontology: ${data.structural_result.time_load_ontology} seconds</p>
+                        <p>Time to perform reasoning: ${data.structural_result.time_perform_reasoning} seconds</p>
+                        <p>Time to execute query 1: ${data.structural_result.time_execute_query_1} seconds</p>
+                        <p>Time to execute query 2: ${data.structural_result.time_execute_query_2} seconds</p>
+                        <p>Time to execute query 3: ${data.structural_result.time_execute_query_3} seconds</p>
+                    `;
+                    document.getElementById('structural-result').innerHTML = structuralContent;
+
+                    // Quality Analysis
+                    let passedTests = data.checks.filter(check => check.status === 'success').length;
+                    let totalTests = data.checks.length;
+                    let passedPercentage = (passedTests / totalTests) * 100;
+
+                    let qualityContent = `
+                        <p>Resolved IRI: ${data.ontology_URI}</p>
+                        <p>Total - Object Properties: 135, Classes: 233</p>
+                        <h3>FOOPS! Evaluation Results:</h3>
+                    `;
+
+                    data.checks.forEach(check => {
+                        let statusClass = check.status === 'error' ? 'error' : 'success';
+                        qualityContent += `
+                            <div>
+                                <h4>${check.title} <span class="${statusClass}">(${check.status})</span></h4>
+                                <p><strong>Description:</strong> ${check.description}</p>
+                                <p><strong>Explanation:</strong> ${check.explanation}</p>
+                                <p><strong>Total Passed Tests:</strong> ${check.total_passed_tests}</p>
+                                <p><strong>Total Tests Run:</strong> ${check.total_tests_run}</p>
+                                <hr>
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById('quality-result').innerHTML = qualityContent;
+
+                    // Render Quality Overall Chart
+                    let ctx = document.getElementById('quality-overall-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Passed', 'Failed'],
+                            datasets: [{
+                                data: [passedPercentage, 100 - passedPercentage],
+                                backgroundColor: ['#4caf50', '#f44336'],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutoutPercentage: 70,
+                            tooltips: { enabled: true },
+                            hover: { mode: null },
+                            animation: {
+                                animateRotate: true,
+                                animateScale: true
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching the JSON:', error));
+        });
+    </script>
+</body>
+</html>

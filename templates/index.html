@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>OntoReuse</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f7f9fc;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 900px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+            padding: 20px;
+        }
+        header {
+            background-color: #005b96;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header img {
+            width: 40px;
+            vertical-align: middle;
+        }
+        header h1 {
+            display: inline;
+            font-family: 'Pacifico', cursive;
+            font-size: 2em;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        .input-section {
+            background-color: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .input-section label {
+            font-weight: bold;
+            color: #005b96;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-section input[type="file"],
+        .input-section input[type="text"],
+        .input-section textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            display: block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+            transition: border-color 0.3s;
+        }
+        .input-section input[type="file"]:focus,
+        .input-section input[type="text"]:focus,
+        .input-section textarea:focus {
+            border-color: #005b96;
+            outline: none;
+        }
+        .input-section button {
+            background-color: #005b96;
+            color: white;
+            padding: 14px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-family: 'Roboto', sans-serif;
+            transition: background-color 0.3s;
+        }
+        .input-section button:hover {
+            background-color: #004080;
+        }
+        .results-section {
+            display: none;
+        }
+        .result-block {
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 2px solid #005b96;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: auto;
+            position: relative;
+            margin-top: 10px;
+        }
+        .circle span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #loading img {
+            width: 50px;
+            height: 50px;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+        .progress-bar-inner {
+            height: 10px;
+            width: 0;
+            background-color: #005b96;
+            transition: width 0.4s;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="{{ url_for('static', filename='OntoReuse.png') }}" alt="OntoReuse">
+            <h1>OntoReuse</h1>
+        </header>
+        <div class="input-section">
+            <form id="ontology-form" enctype="multipart/form-data">
+                <label for="ontology_file">Upload Ontology File:</label>
+                <input type="file" name="ontology_file">
+                
+                <label for="ontology_url">Ontology URL:</label>
+                <input type="text" name="ontology_url">
+                
+                <label for="keyword">Enter Keyword:</label>
+                <textarea name="keyword" rows="1"></textarea>
+                
+                <button type="submit">Analyze</button>
+            </form>
+            <div class="progress-bar" id="progress-bar">
+                <div class="progress-bar-inner" id="progress-bar-inner"></div>
+            </div>
+        </div>
+        <div id="loading">
+            <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
+            <p>Analyzing, please wait...</p>
+        </div>
+        <div class="results-section">
+            <h2>Analysis Results</h2>
+            <div class="result-block">
+                <h3>Lexical Analysis Result</h3>
+                <p id="lexical-result"></p>
+                <canvas id="lexical-chart" width="100" height="100"></canvas>
+            </div>
+            <div class="result-block">
+                <h3>Structural Analysis Result</h3>
+                <p id="structural-result"></p>
+                <canvas id="structural-chart" width="100" height="100"></canvas>
+            </div>
+            <div class="result-block">
+                <h3>Quality Analysis Result</h3>
+                <p id="quality-result"></p>
+                <canvas id="quality-chart" width="100" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.getElementById('ontology-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            document.getElementById('loading').style.display = 'block';
+            document.querySelector('.results-section').style.display = 'none';
+            document.getElementById('progress-bar').style.display = 'block';
+            
+            const formData = new FormData(this);
+            const progressBarInner = document.getElementById('progress-bar-inner');
+            progressBarInner.style.width = '30%';
+            
+            fetch('/analyze', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                progressBarInner.style.width = '70%';
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('lexical-result').innerText = data.lexical_result;
+                document.getElementById('structural-result').innerText = data.structural_result;
+                document.getElementById('quality-result').innerText = data.quality_result;
+                
+                document.querySelector('.results-section').style.display = 'block';
+                
+                const lexicalPercentage = calculatePercentage(data.lexical_result);
+                const structuralPercentage = calculatePercentage(data.structural_result);
+                const qualityPercentage = calculatePercentage(data.quality_result);
+
+                updateChart('lexical-chart', lexicalPercentage);
+                updateChart('structural-chart', structuralPercentage);
+                updateChart('quality-chart', qualityPercentage);
+                
+                progressBarInner.style.width = '100%';
+                setTimeout(() => {
+                    document.getElementById('progress-bar').style.display = 'none';
+                    progressBarInner.style.width = '0';
+                }, 1000);
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('progress-bar').style.display = 'none';
+                console.error('Error:', error);
+            });
+        });
+
+        function calculatePercentage(result) {
+            return Math.min(Math.max(result.length % 100, 10), 90);
+        }
+
+        function updateChart(chartId, percentage) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Remaining'],
+                    datasets: [{
+                        data: [percentage, 100 - percentage],
+                        backgroundColor: ['#005b96', '#e0e0e0'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    cutoutPercentage: 70,
+                    tooltips: { enabled: false },
+                    hover: { mode: null },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
