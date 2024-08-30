@@ -1,7 +1,7 @@
 import sys
 import rdflib
+from rdflib import Graph, RDF, OWL, RDFS
 import requests
-import os
 import tempfile
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
@@ -74,7 +74,8 @@ def check_content_negotiation(base_url):
         soup = BeautifulSoup(response.text, 'html.parser')
         links = soup.find_all('a', href=True)
 
-        for link in links, href in link:
+        for link in links:
+            href = link['href']
             for fmt in formats:
                 if href.endswith(fmt):
                     found_formats.add(fmt)

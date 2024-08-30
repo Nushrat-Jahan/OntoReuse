@@ -13,6 +13,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             min-height: 100vh;
         }
         .container {
@@ -90,7 +91,8 @@
             background-color: #004080;
         }
         .results-section {
-            display: none;
+            display: {% if lexical_result or structural_result or quality_result %}block{% else %}none{% endif %};
+            margin-top: 20px;
         }
         .result-block {
             margin-bottom: 20px;
@@ -99,51 +101,25 @@
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .circle {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 2px solid #005b96;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: auto;
-            position: relative;
-            margin-top: 10px;
+        h2 {
+            color: #005b96;
+            font-size: 24px;
+            margin-bottom: 10px;
         }
-        .circle span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 18px;
-            font-weight: bold;
-        }
-        #loading {
-            display: none;
-            text-align: center;
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-bottom: 20px;
         }
-        #loading img {
-            width: 50px;
-            height: 50px;
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
         }
-        .progress-bar {
-            width: 100%;
-            background-color: #f3f3f3;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 10px;
-            display: none;
-        }
-        .progress-bar-inner {
-            height: 10px;
-            width: 0;
-            background-color: #005b96;
-            transition: width 0.4s;
+        th {
+            background-color: #f9f9f9;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
@@ -152,124 +128,94 @@
             <h1>OntoReuse</h1>
         </header>
         <div class="input-section">
-            <form id="ontology-form" enctype="multipart/form-data">
+            <form id="ontology-form" enctype="multipart/form-data" action="/" method="post">
                 <label for="ontology_file">Upload Ontology File:</label>
-                <input type="file" name="ontology_file">
+                <input type="file" name="ontology_file" required>
                 
                 <label for="ontology_url">Ontology URL:</label>
-                <input type="text" name="ontology_url">
+                <input type="text" name="ontology_url" required>
                 
                 <label for="keyword">Enter Keyword:</label>
-                <textarea name="keyword" rows="1"></textarea>
+                <textarea name="keyword" rows="1" required></textarea>
                 
                 <button type="submit">Analyze</button>
             </form>
-            <div class="progress-bar" id="progress-bar">
-                <div class="progress-bar-inner" id="progress-bar-inner"></div>
-            </div>
-        </div>
-        <div id="loading">
-            <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
-            <p>Analyzing, please wait...</p>
         </div>
         <div class="results-section">
             <h2>Analysis Results</h2>
+
             <div class="result-block">
-                <h3>Lexical Analysis Result</h3>
-                <p id="lexical-result"></p>
-                <canvas id="lexical-chart" width="100" height="100"></canvas>
+                <h3>Lexical Evaluation</h3>
+                {% if lexical_result %}
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    {% for key, value in lexical_result.items() %}
+                    <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p>No lexical results available.</p>
+                {% endif %}
             </div>
+
             <div class="result-block">
-                <h3>Structural Analysis Result</h3>
-                <p id="structural-result"></p>
-                <canvas id="structural-chart" width="100" height="100"></canvas>
+                <h3>Structural Evaluation</h3>
+                {% if structural_result %}
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    {% for key, value in structural_result.items() %}
+                    <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p>No structural results available.</p>
+                {% endif %}
             </div>
+
             <div class="result-block">
-                <h3>Quality Analysis Result</h3>
-                <p id="quality-result"></p>
-                <canvas id="quality-chart" width="100" height="100"></canvas>
+                <h3>FAIRness Evaluation</h3>
+                {% if quality_result %}
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    {% for key, value in quality_result.items() %}
+                    {% if key != 'checks' %}
+                    <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+                    {% endif %}
+                    {% endfor %}
+                </table>
+
+                {% if quality_result.checks %}
+                <h4>Detailed Checks</h4>
+                <table>
+                    <tr>
+                        <th>Check ID</th>
+                        <th>Principle ID</th>
+                        <th>Category ID</th>
+                        <th>Status</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Total Passed Tests</th>
+                        <th>Total Tests Run</th>
+                    </tr>
+                    {% for check in quality_result['checks'] %}
+                    <tr>
+                        <td>{{ check['id'] }}</td>
+                        <td>{{ check['principle_id'] }}</td>
+                        <td>{{ check['category_id'] }}</td>
+                        <td>{{ check['status'] }}</td>
+                        <td>{{ check['title'] }}</td>
+                        <td>{{ check['description'] }}</td>
+                        <td>{{ check['total_passed_tests'] }}</td>
+                        <td>{{ check['total_tests_run'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% endif %}
+                {% else %}
+                <p>No FAIRness results available.</p>
+                {% endif %}
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.getElementById('ontology-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            
-            document.getElementById('loading').style.display = 'block';
-            document.querySelector('.results-section').style.display = 'none';
-            document.getElementById('progress-bar').style.display = 'block';
-            
-            const formData = new FormData(this);
-            const progressBarInner = document.getElementById('progress-bar-inner');
-            progressBarInner.style.width = '30%';
-            
-            fetch('/analyze', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                progressBarInner.style.width = '70%';
-                
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('lexical-result').innerText = data.lexical_result;
-                document.getElementById('structural-result').innerText = data.structural_result;
-                document.getElementById('quality-result').innerText = data.quality_result;
-                
-                document.querySelector('.results-section').style.display = 'block';
-                
-                const lexicalPercentage = calculatePercentage(data.lexical_result);
-                const structuralPercentage = calculatePercentage(data.structural_result);
-                const qualityPercentage = calculatePercentage(data.quality_result);
-
-                updateChart('lexical-chart', lexicalPercentage);
-                updateChart('structural-chart', structuralPercentage);
-                updateChart('quality-chart', qualityPercentage);
-                
-                progressBarInner.style.width = '100%';
-                setTimeout(() => {
-                    document.getElementById('progress-bar').style.display = 'none';
-                    progressBarInner.style.width = '0';
-                }, 1000);
-            })
-            .catch(error => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('progress-bar').style.display = 'none';
-                console.error('Error:', error);
-            });
-        });
-
-        function calculatePercentage(result) {
-            return Math.min(Math.max(result.length % 100, 10), 90);
-        }
-
-        function updateChart(chartId, percentage) {
-            const ctx = document.getElementById(chartId).getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Completed', 'Remaining'],
-                    datasets: [{
-                        data: [percentage, 100 - percentage],
-                        backgroundColor: ['#005b96', '#e0e0e0'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: false,
-                    maintainAspectRatio: false,
-                    cutoutPercentage: 70,
-                    tooltips: { enabled: false },
-                    hover: { mode: null },
-                    animation: {
-                        animateRotate: true,
-                        animateScale: true
-                    }
-                }
-            });
-        }
-    </script>
 </body>
 </html>

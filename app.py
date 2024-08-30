@@ -1,48 +1,50 @@
-from flask import Flask, request, render_template, jsonify
-import subprocess
-import os
+from flask import Flask, render_template, request
+import lexical
+import structural
+import quality
 import tempfile
-import json
+import os
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    lexical_result = {}
+    structural_result = {}
+    quality_result = {}
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    keyword = request.form['keyword']
-    ontology_url = request.form['ontology_url']
-    ontology_file = request.files['ontology_file']
-    
-    with tempfile.TemporaryDirectory() as temp_dir:
-        file_path = None
-        if ontology_file:
-            file_path = os.path.join(temp_dir, ontology_file.filename)
-            ontology_file.save(file_path)
-        
-        lexical_result = run_script('lexical.py', keyword, file_path, ontology_url)
-        structural_result = run_script('structural.py', None, file_path, ontology_url)
-        quality_result = run_script('quality.py', None, file_path, ontology_url)
+    if request.method == 'POST':
+        ontology_file = request.files.get('ontology_file')
+        ontology_url = request.form.get('ontology_url')
+        keyword = request.form.get('keyword')
 
-    return jsonify({
-        'lexical_result': lexical_result,
-        'structural_result': structural_result,
-        'quality_result': quality_result
-    })
+        try:
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                ontology_file.save(temp_file.name)
 
-def run_script(script_name, keyword, file_path, ontology_url):
-    args = ['python', script_name]
-    if keyword:
-        args.append(keyword)
-    if file_path:
-        args.append(file_path)
-    if ontology_url:
-        args.append(ontology_url)
-    
-    result = subprocess.run(args, capture_output=True, text=True)
-    return result.stdout
+            ontology_terms, main_graph = lexical.load_ontology(temp_file.name)
+            if main_graph:
+                lexical_result = lexical.calculate_metrics(keyword, ontology_terms)
+                structural_result = structural.evaluate_ontology(main_graph, 0)
+                quality_result = quality.evaluate_with_foops(ontology_url)
+
+                # Handle content negotiation (if necessary)
+                base_url = ontology_url.rsplit('/', 1)[0] + '/'
+                found_formats = quality.check_content_negotiation(base_url)
+                quality_result['found_formats'] = found_formats
+                quality_result['content_negotiation_score'] = len(found_formats)
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        finally:
+            if os.path.exists(temp_file.name):
+                os.remove(temp_file.name)
+
+    return render_template('index.html', 
+                           lexical_result=lexical_result, 
+                           structural_result=structural_result, 
+                           quality_result=quality_result)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -4,7 +4,11 @@ from rdflib import Graph, RDF, OWL, RDFS
 import requests
 from difflib import SequenceMatcher
 import tempfile
+import nltk
+nltk.download('wordnet')
+from nltk.corpus import wordnet as wn
 
+# Function to count elements in the ontology graph
 def count_elements(graph):
     classes = set(graph.subjects(RDF.type, OWL.Class))
     object_properties = set(graph.subjects(RDF.type, OWL.ObjectProperty))
@@ -18,6 +22,7 @@ def count_elements(graph):
 
     return len(object_properties), len(classes)
 
+# Function to download and parse an ontology
 def download_and_parse_ontology(url):
     try:
         response = requests.get(url, headers={"Accept": "text/turtle,application/rdf+xml"}, allow_redirects=True)
@@ -33,6 +38,7 @@ def download_and_parse_ontology(url):
         print(f"Failed to parse ontology from {url}: {e}")
         return None
 
+# Function to resolve imports in the ontology
 def resolve_imports(graph, base_url, temp_dir):
     for _, _, imported_iri in graph.triples((None, OWL.imports, None)):
         imported_iri = str(imported_iri)
@@ -46,6 +52,7 @@ def resolve_imports(graph, base_url, temp_dir):
         else:
             print(f"Failed to download or load ontology from URL: {imported_iri}")
 
+# Function to load the ontology from a source
 def load_ontology(source):
     if source.startswith('http://') or source.startswith('https://'):
         main_graph = download_and_parse_ontology(source)
@@ -89,12 +96,33 @@ def load_ontology(source):
         print("Failed to load the ontology.")
         return [], None
 
+# Function to get WordNet synonyms and related terms
+def get_wordnet_synonyms(term, pos=wn.NOUN):
+    synonyms = set()
+    for synset in wn.synsets(term, pos=pos):
+        for lemma in synset.lemmas():
+            synonyms.add(lemma.name().replace('_', ' '))
+        for hypernym in synset.hypernyms():
+            for lemma in hypernym.lemmas():
+                synonyms.add(lemma.name().replace('_', ' '))
+        for hyponym in synset.hyponyms():
+            for lemma in hyponym.lemmas():
+                synonyms.add(lemma.name().replace('_', ' '))
+    return list(synonyms)
+
+# Function to get related words using WordNet and Datamuse
 def get_related_words(input_term):
     input_term_normalized = input_term.strip().lower()
     related_terms = {input_term_normalized}
-    words = input_term_normalized.split()
-    for word in words:
-        url = f"https://api.datamuse.com/words?ml={word}"
+
+    # Add synonyms and related terms from WordNet
+    wordnet_synonyms = get_wordnet_synonyms(input_term_normalized)
+    related_terms.update(wordnet_synonyms)
+    
+    # Add words from the Datamuse API with specific tags for relevance
+    tags = ['ml', 'rel_syn', 'rel_jja', 'rel_trg']
+    for tag in tags:
+        url = f"https://api.datamuse.com/words?{tag}={input_term_normalized}"
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -103,13 +131,23 @@ def get_related_words(input_term):
                 if 'word' in entry:
                     related_terms.add(entry['word'])
         except requests.exceptions.RequestException as e:
-            continue
+            print(f"Failed to fetch related words from Datamuse API: {e}")
 
+    # Filter terms based on string similarity
+    related_terms = filter_related_terms(related_terms, input_term_normalized, threshold=0.5)
+    
     return list(related_terms)
 
+# Function to filter related terms based on similarity
+def filter_related_terms(related_terms, input_term, threshold=0.5):
+    filtered_terms = [term for term in related_terms if string_similarity(input_term, term) >= threshold]
+    return filtered_terms
+
+# Function to calculate string similarity
 def string_similarity(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
+# Function to calculate metrics based on the related words and ontology
 def calculate_metrics(input_term, ontology):
     related_terms = get_related_words(input_term)
     D = len(related_terms)

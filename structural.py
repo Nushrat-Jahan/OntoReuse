@@ -221,6 +221,7 @@ def execute_queries(graph):
         query_times.append(time.time() - start_time)
     return query_times
 
+
 def evaluate_ontology(graph, load_time):
     concept_structure_result = concept_structure(graph)
     relationship_richness_result = relationship_richness(graph)
@@ -236,29 +237,28 @@ def evaluate_ontology(graph, load_time):
     datatype_properties = get_datatype_properties(graph)
     total_properties = len(object_properties) + len(datatype_properties)
     
-    print("\nRelationship Richness: {:.2f}%".format(relationship_richness_result))
-    print("Inheritance Richness: {:.2f}%".format(inheritance_richness_result))
+    # Prepare a dictionary to store all results
+    structural_result = {
+        "Relationship Richness": f"{relationship_richness_result:.2f}%",
+        "Inheritance Richness": f"{inheritance_richness_result:.2f}%",
+        "Sum of the number of subclasses": total_subclasses,
+        "Average number of subclasses per class": avg_subclasses_per_class,
+        "Inheritance Depth": inheritance_depth_result,
+        "Number of object properties": len(object_properties),
+        "Number of datatype properties": len(datatype_properties),
+        "Total number of relationships (properties)": total_properties,
+        "Number of Roots (NoR)": num_roots,
+        "Number of Leaves (NoL)": num_leaves,
+        "Average Depth of Inheritance Tree of Leaf Nodes (ADIT-LN)": f"{avg_depth_leaves:.2f}%",
+        "Consistency": consistency_result,
+        "Time to load ontology": f"{load_time:.4f} seconds",
+        "Time to perform reasoning": f"{reasoning_time:.4f} seconds",
+        "Time to execute query 1": f"{query_times[0]:.4f} seconds",
+        "Time to execute query 2": f"{query_times[1]:.4f} seconds",
+        "Time to execute query 3": f"{query_times[2]:.4f} seconds",
+    }
     
-    print("Sum of the number of subclasses:", total_subclasses)
-    print("Average number of subclasses per class:", avg_subclasses_per_class)
-    
-    print("Inheritance Depth:", inheritance_depth_result)
-    print("Number of object properties:", len(object_properties))
-    print("Number of datatype properties:", len(datatype_properties))
-    print("Total number of relationships (properties):", total_properties)
-    
-    print("\nCohesion Metrics:")
-    print("Number of Roots (NoR):", num_roots)
-    print("Number of Leaves (NoL):", num_leaves)
-    print("Average Depth of Inheritance Tree of Leaf Nodes (ADIT-LN): {:.2f}%".format(avg_depth_leaves))
-    
-    print("\nConsistency:", consistency_result)
-    
-    print("\nComputational Efficiency:")
-    print(f"Time to load ontology: {load_time:.4f} seconds")
-    print(f"Time to perform reasoning: {reasoning_time:.4f} seconds")
-    for i, query_time in enumerate(query_times, 1):
-        print(f"Time to execute query {i}: {query_time:.4f} seconds")
+    return structural_result
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -269,6 +269,8 @@ if __name__ == "__main__":
     graph, load_time = load_ontology(ontology_source)
 
     if graph:
-        evaluate_ontology(graph, load_time)
+        structural_result = evaluate_ontology(graph, load_time)
+        for key, value in structural_result.items():
+            print(f"{key}: {value}")
     else:
         print("No ontology loaded.")
