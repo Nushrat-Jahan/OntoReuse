@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 import lexical
 import structural
-import quality
+import FAIRness
 import tempfile
 import os
 
@@ -26,11 +26,11 @@ def index():
             if main_graph:
                 lexical_result = lexical.calculate_metrics(keyword, ontology_terms)
                 structural_result = structural.evaluate_ontology(main_graph, 0)
-                quality_result = quality.evaluate_with_foops(ontology_url)
+                quality_result = FAIRness.evaluate_with_foops(ontology_url)
 
                 # Handle content negotiation (if necessary)
                 base_url = ontology_url.rsplit('/', 1)[0] + '/'
-                found_formats = quality.check_content_negotiation(base_url)
+                found_formats = FAIRness.check_content_negotiation(base_url)
                 quality_result['found_formats'] = found_formats
                 quality_result['content_negotiation_score'] = len(found_formats)
 

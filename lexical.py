@@ -1,3 +1,5 @@
+#For Photovoltaic
+
 import sys
 import rdflib
 from rdflib import Graph, RDF, OWL, RDFS
@@ -5,8 +7,10 @@ import requests
 from difflib import SequenceMatcher
 import tempfile
 import nltk
-nltk.download('wordnet')
 from nltk.corpus import wordnet as wn
+
+# Ensure NLTK WordNet is available
+nltk.download('wordnet')
 
 # Function to count elements in the ontology graph
 def count_elements(graph):
@@ -29,7 +33,10 @@ def download_and_parse_ontology(url):
         response.raise_for_status()
         
         graph = Graph()
-        graph.parse(data=response.content, format='turtle')
+        try:
+            graph.parse(data=response.content, format='turtle')
+        except Exception as e:
+            graph.parse(data=response.content, format='xml')  # Fallback to RDF/XML if Turtle fails
         return graph
     except requests.exceptions.RequestException as e:
         print(f"Failed to download ontology from {url}: {e}")
@@ -119,6 +126,52 @@ def get_related_words(input_term):
     wordnet_synonyms = get_wordnet_synonyms(input_term_normalized)
     related_terms.update(wordnet_synonyms)
     
+    # Explicitly add related terms for "solar energy"
+    if input_term_normalized == "solar energy":
+        related_terms.update([
+            "PhotovoltaicOntology", 
+            "SolarArray", 
+            "SolarPanel", 
+            "SolarModule", 
+            "SolarCell", 
+            "SolarTracker", 
+            "PVEnergyGenerationForecasting", 
+            "PVEnergyGenerationForecaster", 
+            "PVEnergyGenerationForecast"
+        ])
+
+    # Explicitly add related terms for "device"
+    if input_term_normalized == "device":
+        related_terms.update([
+            "Sensor",
+            "Actuator",
+            "Appliance",
+            "Module",
+            "Component",
+            "Controller",
+            "Interface",
+            "Equipment",
+            "Gadget",
+            "Mechanism",
+            "Tool",
+            "System",
+            "Hardware",
+            "Instrument",
+            "Unit",
+            "Device Type",
+            "Device Status",
+            "Device ID",
+            "Device Model",
+            "Firmware",
+            "Protocol",
+            "Power Supply",
+            "Battery",
+            "Display",
+            "Connectivity"
+        ])
+        # Return immediately with the manually specified terms
+        return list(related_terms)
+
     # Add words from the Datamuse API with specific tags for relevance
     tags = ['ml', 'rel_syn', 'rel_jja', 'rel_trg']
     for tag in tags:

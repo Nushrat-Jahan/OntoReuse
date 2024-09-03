@@ -119,7 +119,24 @@
         th {
             background-color: #f9f9f9;
         }
+        
+        /* New styles for the loading animation */
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .loading img {
+            width: 50px;
+        }
     </style>
+    <script>
+        function showLoading() {
+            document.querySelector('.loading').style.display = 'block';
+            document.querySelector('.input-section').style.display = 'none';
+            document.querySelector('.results-section').style.display = 'none';
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -128,7 +145,7 @@
             <h1>OntoReuse</h1>
         </header>
         <div class="input-section">
-            <form id="ontology-form" enctype="multipart/form-data" action="/" method="post">
+            <form id="ontology-form" enctype="multipart/form-data" action="/" method="post" onsubmit="showLoading()">
                 <label for="ontology_file">Upload Ontology File:</label>
                 <input type="file" name="ontology_file" required>
                 
@@ -141,6 +158,13 @@
                 <button type="submit">Analyze</button>
             </form>
         </div>
+
+        <!-- Loading animation section -->
+        <div class="loading">
+            <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading">
+            <p>Loading... Please wait.</p>
+        </div>
+
         <div class="results-section">
             <h2>Analysis Results</h2>
 
@@ -217,7 +241,7 @@
             </div>
         </div>
     </div>
-	<footer style="text-align: center; padding: 10px; font-size: 14px;">
+    <footer style="text-align: center; padding: 10px; font-size: 14px;">
         © Nushrat Jahan 2024. All Rights Reserved.
     </footer>
 </body>

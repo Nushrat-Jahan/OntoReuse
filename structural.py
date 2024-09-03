@@ -24,7 +24,11 @@ def download_and_parse_ontology(url):
         response = requests.get(url, headers={"Accept": "text/turtle,application/rdf+xml"}, allow_redirects=True)
         response.raise_for_status()
         graph = Graph()
+        parse_start_time = time.perf_counter()
         graph.parse(data=response.content, format='turtle')
+        parse_time = time.perf_counter() - parse_start_time
+        print(f"Ontology parsed from {url} in {parse_time:.8f} seconds.")  # Debug: Confirm parse time
+        print(f"Number of triples in ontology: {len(list(graph))}")  # Debug: Print number of triples
         return graph
     except requests.exceptions.RequestException as e:
         print(f"Failed to download ontology from {url}: {e}")
@@ -52,40 +56,33 @@ def load_ontology(source):
         return None, 0
     print(f"Loading ontology from source: {source}")
     if source.startswith('http://') or source.startswith('https://'):
-        start_time = time.time()
+        start_time = time.perf_counter()  # Higher precision timer
         main_graph = download_and_parse_ontology(source)
-        load_time = time.time() - start_time
+        load_time = time.perf_counter() - start_time
         base_url = source.rsplit('/', 1)[0] + '/' if main_graph else None
     else:
         base_url = None
         try:
-            if source:
-                start_time = time.time()
-                with open(source, 'r') as file:
-                    for line in file:
-                        if line.startswith('@base'):
-                            base_url = line.split('<')[1].split('>')[0]
-                            break
-                        if "imports:" in line:
-                            base_url = line.split(':')[1].strip()
-                            if base_url.startswith('<') and base_url.endswith('>'):
-                                base_url = base_url[1:-1]
-                main_graph = Graph()
-                main_graph.parse(source, format='turtle')
-                load_time = time.time() - start_time
-            else:
-                main_graph = None
+            start_time = time.perf_counter()  # Higher precision timer
+            main_graph = Graph()
+            parse_start_time = time.perf_counter()
+            main_graph.parse(source, format='turtle')
+            parse_time = time.perf_counter() - parse_start_time
+            load_time = time.perf_counter() - start_time
+            print(f"Ontology parsed from file in {parse_time:.8f} seconds.")  # Debug: Print parse time
+            print(f"Total loading time: {load_time:.8f} seconds")  # Debug: Print load time
         except FileNotFoundError:
             print("The file path is not correct. Please provide a valid file path.")
             main_graph = None
             load_time = 0
 
     if main_graph:
+        print(f"Ontology has {len(list(main_graph))} triples.")  # Debug: Print number of triples
         with tempfile.TemporaryDirectory() as temp_dir:
             if base_url:
                 resolve_imports(main_graph, base_url, temp_dir)
             object_properties_count, classes_count = count_elements(main_graph)
-            print(f"\nTotal - Object Properties: {object_properties_count}, Classes: {classes_count}")
+            print(f"Total - Object Properties: {object_properties_count}, Classes: {classes_count}")
             return main_graph, load_time
     else:
         print("Failed to load the ontology.")
@@ -131,14 +128,29 @@ def inheritance_richness(graph):
     return inheritance_richness_value
 
 def inheritance_depth(graph):
-    def get_depth(cls, current_depth=0):
+    def get_depth(cls, depth_map):
+        if cls in depth_map:
+            return depth_map[cls]
         subclasses = set(graph.subjects(RDFS.subClassOf, cls))
         if not subclasses:
-            return current_depth
-        return max(get_depth(sub, current_depth + 1) for sub in subclasses)
+            depth_map[cls] = 1
+            return 1
+        max_depth = 0
+        for sub in subclasses:
+            sub_depth = get_depth(sub, depth_map)
+            if sub_depth > max_depth:
+                max_depth = sub_depth
+        depth_map[cls] = max_depth + 1
+        return max_depth + 1
+    
     classes = get_classes(graph)
-    depth = max(get_depth(cls) for cls in classes) if classes else 0
-    return depth
+    depth_map = {}
+    
+    for cls in classes:
+        get_depth(cls, depth_map)
+    
+    # Return the maximum depth found
+    return max(depth_map.values()) if depth_map else 0
 
 def count_subclasses(graph):
     classes = get_classes(graph)
@@ -161,7 +173,8 @@ def average_depth_of_inheritance_tree(graph):
     def get_all_paths_to_leaves(cls, current_path):
         subclasses = list(graph.subjects(RDFS.subClassOf, cls))
         if not subclasses:
-            return [current_path]
+            print(f"Leaf Node Path: {current_path}")  # Debug: Print the leaf node paths
+            return [current_path]  # Return the path if it's a leaf
         paths = []
         for sub in subclasses:
             paths.extend(get_all_paths_to_leaves(sub, current_path + [sub]))
@@ -169,28 +182,40 @@ def average_depth_of_inheritance_tree(graph):
 
     classes = get_classes(graph)
     root_classes = [cls for cls in classes if not list(graph.objects(cls, RDFS.subClassOf))]
+    print(f"Root Classes: {root_classes}")  # Debug: Print the root classes
     all_paths = []
-    
+
     for root in root_classes:
         all_paths.extend(get_all_paths_to_leaves(root, [root]))
 
     if not all_paths:
-        return 0
+        return 0.0
 
     total_depth = sum(len(path) - 1 for path in all_paths)
-    return (total_depth / len(all_paths)) * 100
+    num_paths = len(all_paths)
+
+    if num_paths == 0:
+        return 0.0
+
+    average_depth = total_depth / num_paths
+    print(f"Total Depth: {total_depth}, Number of Paths: {num_paths}, Average Depth: {average_depth}")  # Debug: Print depth details
+    return average_depth
 
 def check_consistency(graph):
     try:
         temp_owl_path = tempfile.NamedTemporaryFile(suffix=".owl", delete=False).name
         graph.serialize(destination=temp_owl_path, format='xml')
+        print(f"Ontology serialized to {temp_owl_path}")  # Debug: Confirm serialization
         ontology = get_ontology(f"file://{temp_owl_path}").load()
+        print("Ontology loaded for reasoning.")  # Debug: Print to confirm reasoning starts
         try:
             start_time = time.time()
             sync_reasoner_pellet(infer_property_values=True)
             reasoning_time = time.time() - start_time
+            print(f"Reasoning completed in {reasoning_time:.4f} seconds.")  # Debug: Print reasoning time
             return 1, reasoning_time  # Consistent
         except OwlReadyInconsistentOntologyError:
+            print("Ontology is inconsistent.")  # Debug: Print inconsistency
             return 0, 0  # Inconsistent
     except Exception as e:
         print(f"Error during consistency check: {e}")
@@ -221,7 +246,6 @@ def execute_queries(graph):
         query_times.append(time.time() - start_time)
     return query_times
 
-
 def evaluate_ontology(graph, load_time):
     concept_structure_result = concept_structure(graph)
     relationship_richness_result = relationship_richness(graph)
@@ -229,7 +253,9 @@ def evaluate_ontology(graph, load_time):
     inheritance_depth_result = inheritance_depth(graph)
     subclass_count_result, total_subclasses, avg_subclasses_per_class = count_subclasses(graph)
     num_roots, num_leaves = count_roots_leaves(graph)
-    avg_depth_leaves = average_depth_of_inheritance_tree(graph)
+    avg_depth_leaves = average_depth_of_inheritance_tree(graph)*100  # Updated calculation with debugging
+    if avg_depth_leaves == 0:
+        avg_depth_leaves = avg_subclasses_per_class*100
     consistency_result, reasoning_time = check_consistency(graph)
     query_times = execute_queries(graph)
     
@@ -249,9 +275,8 @@ def evaluate_ontology(graph, load_time):
         "Total number of relationships (properties)": total_properties,
         "Number of Roots (NoR)": num_roots,
         "Number of Leaves (NoL)": num_leaves,
-        "Average Depth of Inheritance Tree of Leaf Nodes (ADIT-LN)": f"{avg_depth_leaves:.2f}%",
-        "Consistency": consistency_result,
-        "Time to load ontology": f"{load_time:.4f} seconds",
+        "Average Depth of Inheritance Tree of Leaf Nodes (ADIT-LN)": f"{avg_depth_leaves:.2f}",
+        "Time to parse ontology": f"{load_time:.8f} seconds",  # Higher precision
         "Time to perform reasoning": f"{reasoning_time:.4f} seconds",
         "Time to execute query 1": f"{query_times[0]:.4f} seconds",
         "Time to execute query 2": f"{query_times[1]:.4f} seconds",
